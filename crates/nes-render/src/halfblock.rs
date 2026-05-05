@@ -12,6 +12,8 @@ type Cell = ((u8, u8, u8), (u8, u8, u8)); // (fg=top, bg=bottom)
 /// Each terminal cell encodes 2 vertical NES pixels: fg = top, bg = bottom.
 pub struct HalfblockRenderer<W: Write> {
     out: W,
+    /// Only `for_stdout()` sets this true; setting it true on a non-terminal writer
+    /// will smash the calling process's terminal on `enter`.
     manage_terminal: bool,
     /// Previous frame's cells, indexed by (row_pair * WIDTH + x).
     /// `None` until first draw — first draw paints everything.
@@ -49,8 +51,7 @@ impl<W: Write> crate::Renderer for HalfblockRenderer<W> {
                 self.out,
                 crossterm::terminal::EnterAlternateScreen,
                 crossterm::cursor::Hide,
-            )
-            .map_err(io::Error::other)?;
+            )?;
         }
         Ok(())
     }
