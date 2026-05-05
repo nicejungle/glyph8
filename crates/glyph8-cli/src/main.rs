@@ -1,13 +1,15 @@
 mod cli;
+mod headless;
 
+use anyhow::Result;
 use clap::Parser;
 
-fn main() {
+fn main() -> Result<()> {
     let args = cli::Args::parse();
-    eprintln!(
-        "parsed: rom={}, headless={}, frames={}",
-        args.rom.display(),
-        args.headless,
-        args.frames
-    );
+    if args.headless {
+        headless::run(&args.rom, args.frames)
+    } else {
+        // Interactive runloop wired in Task 10.
+        anyhow::bail!("interactive mode not yet implemented (use --headless for now)");
+    }
 }
