@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
 use nes_core::ControllerState;

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::time::{Duration, Instant};
 
 /// Sliding-window FPS meter. Records a tick on each frame; reports the
