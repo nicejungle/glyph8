@@ -32,8 +32,12 @@ pub struct TetanesBackend {
 
 impl TetanesBackend {
     pub fn new() -> Self {
+        let mut deck = ControlDeck::new();
+        // tetanes-core requires explicit sample rate setup before producing samples.
+        // Default to 44100.0 Hz (standard CD audio).
+        deck.set_sample_rate(44100.0);
         Self {
-            deck: ControlDeck::new(),
+            deck,
             frame: Frame::default(),
             audio: Vec::new(),
             loaded: None,
@@ -140,9 +144,28 @@ mod tests {
     /// Re-implemented here because `pub(crate)` test helpers don't cross crate boundaries.
     fn minimal_nrom() -> Vec<u8> {
         let mut rom = Vec::with_capacity(16 + 16 * 1024 + 8 * 1024);
+        // iNES header: NES\x1A + 12 header bytes
         rom.extend_from_slice(b"NES\x1A");
         rom.extend_from_slice(&[1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-        rom.extend(std::iter::repeat_n(0u8, 16 * 1024));
+
+        // PRG ROM: 16 KB
+        let mut prg = vec![0u8; 16 * 1024];
+        // Set up NES vectors at the end of PRG ROM (16KB = $4000, so vectors are at offsets $3FFA-$3FFF)
+        // NMI vector at $FFFA (offset $3FFA): points to $8000
+        prg[0x3FFA] = 0x00;
+        prg[0x3FFB] = 0x80;
+        // RESET vector at $FFFC (offset $3FFC): points to $8000
+        prg[0x3FFC] = 0x00;
+        prg[0x3FFD] = 0x80;
+        // IRQ/BRK vector at $FFFE (offset $3FFE): points to $8000
+        prg[0x3FFE] = 0x00;
+        prg[0x3FFF] = 0x80;
+        // Program code at $8000: infinite loop (BIT $0000, then JMP)
+        // EA = NOP, so fill with NOPs for a safe infinite loop
+        prg[0x0000] = 0xEA; // NOP at $8000
+        rom.extend(prg);
+
+        // CHR ROM: 8 KB (all zeros)
         rom.extend(std::iter::repeat_n(0u8, 8 * 1024));
         rom
     }
@@ -180,5 +203,17 @@ mod tests {
         be.step_frame();
         // No assertions on emulator state — synthetic NROM has no logic.
         // We're proving the call path doesn't panic and the bits map.
+    }
+
+    #[test]
+    fn drain_audio_yields_samples_after_frame() {
+        let mut be = TetanesBackend::new();
+        be.load_rom(&minimal_nrom()).unwrap();
+        be.step_frame();
+        let samples = be.drain_audio();
+        assert!(
+            !samples.is_empty(),
+            "expected at least one audio sample per frame, got 0"
+        );
     }
 }
