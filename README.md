@@ -37,9 +37,10 @@ glyph8 --headless --frames=60 your.nes     # CI / determinism check
 - **No key-release events** — your terminal sends presses only (without the
   Kitty keyboard protocol). Holding a button reads as repeated taps. Stage 1.C
   fixes this.
-- **No adaptive sizing** — terminal must be ≥ 256 columns × 122 rows for the
-  picture to fit without wrapping. Stage 1.E adds braille / ASCII modes for
-  smaller terminals.
+- **Halfblock-only renderer with nearest-neighbor downsampling** — the picture
+  scales (with NES aspect preserved) to fit your terminal. Native resolution
+  is 256×120 cells; below that the picture is downsampled. Below 64×33 cells
+  the renderer bails. True per-pixel braille / ASCII modes still come in 1.E.
 - **No status bar UI** — current status line is plain text. Stage 1.F adds a
   ratatui-based status bar with pause modal.
 - **Commercial ROMs not bundled.** Bring your own legally-acquired ROM.
