@@ -9,6 +9,14 @@ pub trait EmulatorBackend: Send {
     fn step_frame(&mut self);
     fn frame(&self) -> &Frame;
     fn submit_input(&mut self, p1: ControllerState, p2: ControllerState);
+    /// Returns audio samples produced during the most recent [`step_frame`].
+    ///
+    /// The slice is overwritten by each call to [`step_frame`]; calling
+    /// `drain_audio` multiple times between frames returns the same samples.
+    /// Implementations are expected to clear the buffer at the start of the
+    /// next [`step_frame`], not at the end of `drain_audio`.
+    ///
+    /// [`step_frame`]: Self::step_frame
     fn drain_audio(&mut self) -> &[f32];
     fn reset(&mut self);
 }
@@ -41,11 +49,8 @@ mod tests {
         }
         fn submit_input(&mut self, _p1: ControllerState, _p2: ControllerState) {}
         fn drain_audio(&mut self) -> &[f32] {
-            // Return everything; clearing happens on next step.
-            let slice = &self.audio[..];
-            // SAFETY: we only need to expose then clear later. Simpler:
-            // we just leave the buffer; real backends should clear.
-            slice
+            // This mock accumulates samples without draining; real backends should clear.
+            &self.audio[..]
         }
         fn reset(&mut self) {
             self.audio.clear();

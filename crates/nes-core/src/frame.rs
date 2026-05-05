@@ -24,11 +24,21 @@ impl Frame {
         }
     }
 
+    /// Sets the pixel at `(x, y)` to `rgb`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `x >= WIDTH` or `y >= HEIGHT`.
     pub fn set_pixel(&mut self, x: usize, y: usize, rgb: [u8; 3]) {
         let off = (y * WIDTH + x) * BPP;
         self.pixels[off..off + 3].copy_from_slice(&rgb);
     }
 
+    /// Returns the RGB triple at `(x, y)`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `x >= WIDTH` or `y >= HEIGHT`.
     pub fn get_pixel(&self, x: usize, y: usize) -> [u8; 3] {
         let off = (y * WIDTH + x) * BPP;
         [self.pixels[off], self.pixels[off + 1], self.pixels[off + 2]]

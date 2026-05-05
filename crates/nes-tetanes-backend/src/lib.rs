@@ -44,6 +44,11 @@ impl TetanesBackend {
         }
     }
 
+    /// Returns the iNES header info of the currently-loaded ROM, or `None` if no ROM is loaded.
+    pub fn rom_info(&self) -> Option<RomInfo> {
+        self.loaded
+    }
+
     fn apply_joypad(deck: &mut ControlDeck, slot: tetanes_core::input::Player, s: ControllerState) {
         use tetanes_core::input::JoypadBtn;
         let pad = deck.joypad_mut(slot);
