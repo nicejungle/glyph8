@@ -84,18 +84,12 @@ impl EmulatorBackend for TetanesBackend {
         Ok(info)
     }
 
-    fn step_frame(&mut self) {
+    fn step_frame(&mut self) -> Result<(), EmulatorError> {
         // Clock tetanes for one full frame; map errors to Backend variant.
         // We swallow the cycle count return value.
-        if let Err(e) = self.deck.clock_frame() {
-            // Don't panic — log via Backend error in a future task. For now,
-            // this is unrecoverable mid-frame. Reset the audio buffer so
-            // we don't accumulate stale samples.
-            self.audio.clear();
-            // Convert error to a string for debugging output.
-            eprintln!("tetanes clock_frame error: {}", e);
-            return;
-        }
+        self.deck
+            .clock_frame()
+            .map_err(|e| EmulatorError::Backend(e.to_string()))?;
 
         // tetanes 0.12.2 frame_buffer() returns &[u8] of length 256*240*4 (RGBA).
         // Our Frame is RGB (256*240*3). Strip the alpha channel pixel-by-pixel.
@@ -121,6 +115,7 @@ impl EmulatorBackend for TetanesBackend {
         self.audio.clear();
         self.audio.extend_from_slice(self.deck.audio_samples());
         self.deck.clear_audio_samples();
+        Ok(())
     }
 
     fn frame(&self) -> &Frame {
@@ -195,7 +190,7 @@ mod tests {
     fn step_frame_produces_a_full_frame_buffer() {
         let mut be = TetanesBackend::new();
         be.load_rom(&minimal_nrom()).unwrap();
-        be.step_frame();
+        be.step_frame().unwrap();
         let f = be.frame();
         assert_eq!(f.pixels.len(), nes_core::FRAME_BYTES);
         // The synthetic NROM has no real CPU code, so we don't assert on
@@ -212,7 +207,7 @@ mod tests {
         p1.press(ControllerState::START);
         let p2 = ControllerState::empty();
         be.submit_input(p1, p2);
-        be.step_frame();
+        be.step_frame().unwrap();
         // No assertions on emulator state — synthetic NROM has no logic.
         // We're proving the call path doesn't panic and the bits map.
     }
@@ -221,7 +216,7 @@ mod tests {
     fn drain_audio_yields_samples_after_frame() {
         let mut be = TetanesBackend::new();
         be.load_rom(&minimal_nrom()).unwrap();
-        be.step_frame();
+        be.step_frame().unwrap();
         let samples = be.drain_audio();
         assert!(
             !samples.is_empty(),
@@ -233,13 +228,13 @@ mod tests {
     fn reset_clears_audio_and_keeps_rom_loaded() {
         let mut be = TetanesBackend::new();
         be.load_rom(&minimal_nrom()).unwrap();
-        be.step_frame();
+        be.step_frame().unwrap();
         assert!(!be.drain_audio().is_empty());
         be.reset();
         // After reset, the audio buffer from previous frames is gone.
         assert!(be.drain_audio().is_empty());
         // Re-stepping should still work (ROM stays loaded).
-        be.step_frame();
+        be.step_frame().unwrap();
         assert!(!be.drain_audio().is_empty());
     }
 }

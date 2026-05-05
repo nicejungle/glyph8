@@ -6,7 +6,13 @@ use crate::{ControllerState, EmulatorError, Frame, RomInfo};
 
 pub trait EmulatorBackend: Send {
     fn load_rom(&mut self, rom: &[u8]) -> Result<RomInfo, EmulatorError>;
-    fn step_frame(&mut self);
+    /// Advances the emulator by exactly one frame.
+    ///
+    /// On error, the backend's internal state is left undefined; callers
+    /// should typically [`reset`] before calling `step_frame` again.
+    ///
+    /// [`reset`]: Self::reset
+    fn step_frame(&mut self) -> Result<(), EmulatorError>;
     fn frame(&self) -> &Frame;
     fn submit_input(&mut self, p1: ControllerState, p2: ControllerState);
     /// Returns audio samples produced during the most recent [`step_frame`].
@@ -41,8 +47,9 @@ mod tests {
             self.loaded = Some(info);
             Ok(info)
         }
-        fn step_frame(&mut self) {
+        fn step_frame(&mut self) -> Result<(), EmulatorError> {
             self.audio.push(0.0);
+            Ok(())
         }
         fn frame(&self) -> &Frame {
             &self.frame
@@ -65,7 +72,7 @@ mod tests {
         let info = be.load_rom(&rom).unwrap();
         assert_eq!(info.mapper, 0);
         be.submit_input(ControllerState::empty(), ControllerState::empty());
-        be.step_frame();
+        be.step_frame().unwrap();
         assert_eq!(be.frame().pixels.len(), crate::FRAME_BYTES);
         be.reset();
     }
