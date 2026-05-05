@@ -7,7 +7,6 @@ use nes_core::ControllerState;
 /// Outcome of polling input for a frame.
 #[derive(Debug, PartialEq)]
 pub enum PollOutcome {
-    Continue(ControllerState),
     Reset,
     Quit,
 }
@@ -36,10 +35,17 @@ impl Input {
         else {
             return None;
         };
-        // Most terminals only deliver `Press` (no repeat or release) without the
-        // Kitty enhancement protocol. We treat every Press as both "press" and
-        // "release at end of frame" — the runloop clears `self.p1` once per
-        // frame before draining events. See spec §3.3 for the trade-off note.
+        // Most terminals only deliver `Press` (no `Repeat` or `Release`) without the
+        // Kitty enhancement protocol. On those terminals, each Press is treated as
+        // a one-frame tap — `begin_frame()` clears the state and the key must be
+        // pressed again next frame to register again.
+        //
+        // On terminals that do send `Repeat` (e.g. Linux VT, some xterm configurations),
+        // holding a key generates Repeat events each poll cycle. Those are accepted
+        // here so the button stays set across `begin_frame()` clears, giving
+        // effective held-button behavior. This is terminal/OS-dependent.
+        //
+        // See spec §3.3 for the full trade-off note.
         if !matches!(kind, KeyEventKind::Press | KeyEventKind::Repeat) {
             return None;
         }
@@ -138,6 +144,28 @@ mod tests {
         i.handle_event(&key(KeyCode::Up, KeyModifiers::NONE));
         assert!(i.p1().pressed(ControllerState::UP));
         i.begin_frame();
+        assert_eq!(i.p1(), ControllerState::empty());
+    }
+
+    #[test]
+    fn tab_presses_select() {
+        let mut i = Input::new();
+        i.handle_event(&key(KeyCode::Tab, KeyModifiers::NONE));
+        assert!(i.p1().pressed(ControllerState::SELECT));
+    }
+
+    #[test]
+    fn enter_presses_start() {
+        let mut i = Input::new();
+        i.handle_event(&key(KeyCode::Enter, KeyModifiers::NONE));
+        assert!(i.p1().pressed(ControllerState::START));
+    }
+
+    #[test]
+    fn non_key_event_returns_none() {
+        let mut i = Input::new();
+        let r = i.handle_event(&Event::FocusGained);
+        assert_eq!(r, None);
         assert_eq!(i.p1(), ControllerState::empty());
     }
 }
