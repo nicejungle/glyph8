@@ -75,7 +75,8 @@ impl<W: Write> crate::Renderer for HalfblockRenderer<W> {
                     continue;
                 }
                 // Position cursor only when we just resumed after skipping.
-                if last_drawn_x != Some(x.wrapping_sub(1)) {
+                let need_cursor = x == 0 || last_drawn_x != Some(x - 1);
+                if need_cursor {
                     write!(self.out, "\x1b[{};{}H", ry + 1, x + 1)?;
                 }
                 let ((tr, tg, tb), (br, bg, bb)) = cur;
