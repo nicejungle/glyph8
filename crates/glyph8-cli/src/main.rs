@@ -1,6 +1,7 @@
 mod cli;
 mod fps;
 mod headless;
+mod input;
 
 use anyhow::Result;
 use clap::Parser;
