@@ -120,7 +120,14 @@ fn run_loop(
         backend.submit_input(input.p1(), ControllerState::empty());
         backend.step_frame()?;
         renderer.draw(backend.frame())?;
-        write_status_line(rom_label, fps.tick(), status_row)?;
+        write_status_line(
+            rom_label,
+            fps.tick(),
+            status_row,
+            input.events_seen(),
+            input.last_event(),
+            input.p1(),
+        )?;
         let now = Instant::now();
         if next > now {
             std::thread::sleep(next - now);
@@ -129,7 +136,14 @@ fn run_loop(
     }
 }
 
-fn write_status_line(rom_label: &str, fps: f32, row: u16) -> std::io::Result<()> {
+fn write_status_line(
+    rom_label: &str,
+    fps: f32,
+    row: u16,
+    events: u64,
+    last_event: &str,
+    p1: ControllerState,
+) -> std::io::Result<()> {
     use crossterm::cursor::MoveTo;
     use crossterm::queue;
     use crossterm::style::Print;
@@ -141,8 +155,8 @@ fn write_status_line(rom_label: &str, fps: f32, row: u16) -> std::io::Result<()>
         MoveTo(0, row),
         Clear(ClearType::CurrentLine),
         Print(format!(
-            "{} | FPS: {:>5.1} | ESC: quit | R: reset",
-            rom_label, fps
+            "{} FPS:{:.0} ev:{} last:{} p1:{:08b} ESC:quit R:reset",
+            rom_label, fps, events, last_event, p1.0
         )),
     )?;
     out.flush()

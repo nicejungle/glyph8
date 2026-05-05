@@ -13,6 +13,10 @@ pub enum PollOutcome {
 #[derive(Default)]
 pub struct Input {
     p1: ControllerState,
+    /// Diagnostic: total events seen by handle_event (any kind).
+    events_seen: u64,
+    /// Diagnostic: short string describing the most recent event.
+    last_event: Option<String>,
 }
 
 impl Input {
@@ -20,10 +24,25 @@ impl Input {
         Self::default()
     }
 
+    /// Diagnostic: total events received since startup.
+    pub fn events_seen(&self) -> u64 {
+        self.events_seen
+    }
+
+    /// Diagnostic: short label for the most recent event ("Up/Press", "non-key", ...).
+    pub fn last_event(&self) -> &str {
+        self.last_event.as_deref().unwrap_or("-")
+    }
+
     /// Apply a single crossterm event. Returns `Some(outcome)` if the event
     /// produced a runloop-level decision (Reset / Quit); otherwise `None`,
     /// meaning "state updated, keep looping".
     pub fn handle_event(&mut self, ev: &Event) -> Option<PollOutcome> {
+        self.events_seen += 1;
+        self.last_event = Some(match ev {
+            Event::Key(KeyEvent { code, kind, .. }) => format!("{:?}/{:?}", code, kind),
+            other => format!("{:?}", other),
+        });
         let Event::Key(KeyEvent {
             code,
             modifiers,
