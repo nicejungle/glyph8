@@ -30,8 +30,6 @@ impl<W: Write> crate::Renderer for HalfblockRenderer<W> {
     }
 
     fn draw(&mut self, frame: &Frame) -> io::Result<()> {
-        debug_assert_eq!(frame.pixels.len(), WIDTH * HEIGHT * BPP);
-
         let row_pairs = HEIGHT / 2;
         for ry in 0..row_pairs {
             // Cursor to row ry+1, col 1 (1-indexed in ANSI).
@@ -101,6 +99,21 @@ mod tests {
             s.contains("38;2;255;0;0"),
             "expected fg escape for red pixel, got: {}",
             &s[..s.len().min(200)]
+        );
+    }
+
+    #[test]
+    fn bottom_pixel_maps_to_bg_color() {
+        let mut buf: Vec<u8> = Vec::new();
+        let mut r = HalfblockRenderer::with_writer(&mut buf);
+        let mut frame = Frame::default();
+        // Row 1 (second pixel row) = bottom half of the first terminal row.
+        frame.set_pixel(0, 1, [0, 0, 255]);
+        r.draw(&frame).unwrap();
+        let s = String::from_utf8_lossy(&buf);
+        assert!(
+            s.contains("48;2;0;0;255"),
+            "expected bg escape for blue bottom pixel"
         );
     }
 }
