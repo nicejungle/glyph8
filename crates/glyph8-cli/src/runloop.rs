@@ -93,7 +93,7 @@ fn write_status_line(rom_label: &str, fps: f32) -> std::io::Result<()> {
     // Status row is just below the 120 halfblock rows.
     queue!(
         out,
-        MoveTo(0, 121),
+        MoveTo(0, 120),
         Clear(ClearType::CurrentLine),
         Print(format!(
             "{} | FPS: {:>5.1} | ESC: quit | R: reset",
