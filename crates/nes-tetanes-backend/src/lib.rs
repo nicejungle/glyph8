@@ -132,7 +132,14 @@ impl EmulatorBackend for TetanesBackend {
     }
 
     fn reset(&mut self) {
-        // Filled in by Task 16.
+        // Soft reset (equivalent to pressing the NES reset button).
+        // Soft preserves RAM/registers; Hard zeros them (power cycle).
+        // Soft is what we want for "user pressed reset hotkey".
+        use tetanes_core::common::{Reset, ResetKind};
+        self.deck.reset(ResetKind::Soft);
+        self.audio.clear();
+        // Keep `self.frame` as-is until the next step_frame; some callers
+        // may render once more between reset and step.
     }
 }
 
@@ -215,5 +222,19 @@ mod tests {
             !samples.is_empty(),
             "expected at least one audio sample per frame, got 0"
         );
+    }
+
+    #[test]
+    fn reset_clears_audio_and_keeps_rom_loaded() {
+        let mut be = TetanesBackend::new();
+        be.load_rom(&minimal_nrom()).unwrap();
+        be.step_frame();
+        assert!(!be.drain_audio().is_empty());
+        be.reset();
+        // After reset, the audio buffer from previous frames is gone.
+        assert!(be.drain_audio().is_empty());
+        // Re-stepping should still work (ROM stays loaded).
+        be.step_frame();
+        assert!(!be.drain_audio().is_empty());
     }
 }
