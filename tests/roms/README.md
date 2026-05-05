@@ -10,10 +10,15 @@ ROMs in this directory are used by integration tests and manual QA.
 - **Purpose:** CPU instruction validation. The canonical reference for "does
   the 6502 core execute every documented opcode correctly?"
 
-## <homebrew>.nes
+## boing.nes
 
-(Added in plan Task 12 — a CC0 / public-domain homebrew demo so the user
-can see something move on the screen, not just CPU-test patterns.)
+- **Author:** Brad Smith (rainwarrior)
+- **License:** CC BY 4.0 — "you are free to reuse this source code for your own purposes, provided that you include an attribution to me (Brad Smith) in documentation and accessible credits for the work it is used in" (per project README).
+- **Source:** https://github.com/bbbradsmith/boingnes/releases/download/1.0/boing.nes
+- **Purpose:** Visual sanity check — a recreation of the classic Amiga
+  "Boing Ball" demo. Animation begins on frame 1 (no title screen),
+  which lets beta users see immediately that the emulator is rendering
+  motion correctly.
 
 ## Commercial ROMs
 
