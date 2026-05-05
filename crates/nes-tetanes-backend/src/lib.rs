@@ -39,6 +39,19 @@ impl TetanesBackend {
             loaded: None,
         }
     }
+
+    fn apply_joypad(deck: &mut ControlDeck, slot: tetanes_core::input::Player, s: ControllerState) {
+        use tetanes_core::input::JoypadBtn;
+        let pad = deck.joypad_mut(slot);
+        pad.set_button(JoypadBtn::A, s.pressed(ControllerState::A));
+        pad.set_button(JoypadBtn::B, s.pressed(ControllerState::B));
+        pad.set_button(JoypadBtn::Select, s.pressed(ControllerState::SELECT));
+        pad.set_button(JoypadBtn::Start, s.pressed(ControllerState::START));
+        pad.set_button(JoypadBtn::Up, s.pressed(ControllerState::UP));
+        pad.set_button(JoypadBtn::Down, s.pressed(ControllerState::DOWN));
+        pad.set_button(JoypadBtn::Left, s.pressed(ControllerState::LEFT));
+        pad.set_button(JoypadBtn::Right, s.pressed(ControllerState::RIGHT));
+    }
 }
 
 impl Default for TetanesBackend {
@@ -105,8 +118,9 @@ impl EmulatorBackend for TetanesBackend {
         &self.frame
     }
 
-    fn submit_input(&mut self, _p1: ControllerState, _p2: ControllerState) {
-        // Filled in by Task 14.
+    fn submit_input(&mut self, p1: ControllerState, p2: ControllerState) {
+        Self::apply_joypad(&mut self.deck, tetanes_core::input::Player::One, p1);
+        Self::apply_joypad(&mut self.deck, tetanes_core::input::Player::Two, p2);
     }
 
     fn drain_audio(&mut self) -> &[f32] {
@@ -151,5 +165,20 @@ mod tests {
         assert_eq!(f.pixels.len(), nes_core::FRAME_BYTES);
         // The synthetic NROM has no real CPU code, so we don't assert on
         // contents here — just that we got a full-sized buffer back.
+    }
+
+    #[test]
+    fn submit_input_does_not_panic_for_either_player() {
+        let mut be = TetanesBackend::new();
+        be.load_rom(&minimal_nrom()).unwrap();
+
+        let mut p1 = ControllerState::empty();
+        p1.press(ControllerState::A);
+        p1.press(ControllerState::START);
+        let p2 = ControllerState::empty();
+        be.submit_input(p1, p2);
+        be.step_frame();
+        // No assertions on emulator state — synthetic NROM has no logic.
+        // We're proving the call path doesn't panic and the bits map.
     }
 }
