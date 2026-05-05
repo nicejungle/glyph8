@@ -63,7 +63,42 @@ impl EmulatorBackend for TetanesBackend {
     }
 
     fn step_frame(&mut self) {
-        // Filled in by Task 13.
+        // Clock tetanes for one full frame; map errors to Backend variant.
+        // We swallow the cycle count return value.
+        if let Err(e) = self.deck.clock_frame() {
+            // Don't panic — log via Backend error in a future task. For now,
+            // this is unrecoverable mid-frame. Reset the audio buffer so
+            // we don't accumulate stale samples.
+            self.audio.clear();
+            // Convert error to a string for debugging output.
+            eprintln!("tetanes clock_frame error: {}", e);
+            return;
+        }
+
+        // tetanes 0.12.2 frame_buffer() returns &[u8] of length 256*240*4 (RGBA).
+        // Our Frame is RGB (256*240*3). Strip the alpha channel pixel-by-pixel.
+        const SRC_BPP: usize = 4;
+        const DST_BPP: usize = nes_core::BPP; // 3
+        let src = self.deck.frame_buffer();
+        debug_assert_eq!(
+            src.len(),
+            nes_core::WIDTH * nes_core::HEIGHT * SRC_BPP,
+            "tetanes RGBA frame buffer size mismatch"
+        );
+        let dst = &mut self.frame.pixels[..];
+        for i in 0..(nes_core::WIDTH * nes_core::HEIGHT) {
+            let s = i * SRC_BPP;
+            let d = i * DST_BPP;
+            dst[d] = src[s];
+            dst[d + 1] = src[s + 1];
+            dst[d + 2] = src[s + 2];
+            // src[s + 3] (alpha) is dropped.
+        }
+
+        // Drain audio for this frame into our buffer (overwrites previous frame's).
+        self.audio.clear();
+        self.audio.extend_from_slice(self.deck.audio_samples());
+        self.deck.clear_audio_samples();
     }
 
     fn frame(&self) -> &Frame {
@@ -105,5 +140,16 @@ mod tests {
         assert_eq!(info.mapper, 0);
         assert_eq!(info.prg_rom_size, 16 * 1024);
         assert_eq!(info.chr_rom_size, 8 * 1024);
+    }
+
+    #[test]
+    fn step_frame_produces_a_full_frame_buffer() {
+        let mut be = TetanesBackend::new();
+        be.load_rom(&minimal_nrom()).unwrap();
+        be.step_frame();
+        let f = be.frame();
+        assert_eq!(f.pixels.len(), nes_core::FRAME_BYTES);
+        // The synthetic NROM has no real CPU code, so we don't assert on
+        // contents here — just that we got a full-sized buffer back.
     }
 }
