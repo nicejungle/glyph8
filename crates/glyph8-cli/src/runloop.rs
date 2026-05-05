@@ -18,7 +18,32 @@ use crate::input::{Input, PollOutcome};
 /// NTSC frame period: ~16.639 ms.
 const FRAME_DUR: Duration = Duration::from_nanos(16_639_267);
 
+/// Minimum terminal cells to fit the halfblock canvas (256×120) + 1 status row.
+const MIN_COLS: u16 = 256;
+const MIN_ROWS: u16 = 121;
+
+/// Returns `Err` if the given cell dimensions can't fit the halfblock canvas
+/// + status row. Pure function so we can test it without a real terminal.
+fn check_terminal_size(cols: u16, rows: u16) -> Result<()> {
+    if cols < MIN_COLS || rows < MIN_ROWS {
+        anyhow::bail!(
+            "terminal too small: {}×{} cells, need at least {}×{}.\n\
+             Resize your terminal (or shrink the font), \
+             or use --headless --frames=N for non-interactive testing.\n\
+             (Adaptive smaller-terminal modes — braille / ASCII — land in Stage 1.E.)",
+            cols,
+            rows,
+            MIN_COLS,
+            MIN_ROWS
+        );
+    }
+    Ok(())
+}
+
 pub fn run(rom_path: &Path) -> Result<()> {
+    let (cols, rows) = crossterm::terminal::size().context("querying terminal size")?;
+    check_terminal_size(cols, rows)?;
+
     let rom_bytes =
         fs::read(rom_path).with_context(|| format!("reading ROM {}", rom_path.display()))?;
     let rom_label = rom_path
@@ -101,4 +126,40 @@ fn write_status_line(rom_label: &str, fps: f32) -> std::io::Result<()> {
         )),
     )?;
     out.flush()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_minimum_required_size() {
+        assert!(check_terminal_size(MIN_COLS, MIN_ROWS).is_ok());
+    }
+
+    #[test]
+    fn accepts_larger_size() {
+        assert!(check_terminal_size(400, 200).is_ok());
+    }
+
+    #[test]
+    fn rejects_too_few_columns() {
+        let err = check_terminal_size(MIN_COLS - 1, MIN_ROWS).unwrap_err();
+        assert!(err.to_string().contains("terminal too small"));
+    }
+
+    #[test]
+    fn rejects_too_few_rows() {
+        let err = check_terminal_size(MIN_COLS, MIN_ROWS - 1).unwrap_err();
+        assert!(err.to_string().contains("terminal too small"));
+    }
+
+    #[test]
+    fn error_includes_actual_and_required_dimensions() {
+        let err = check_terminal_size(80, 24).unwrap_err().to_string();
+        assert!(err.contains("80"), "actual cols not in error: {}", err);
+        assert!(err.contains("24"), "actual rows not in error: {}", err);
+        assert!(err.contains("256"), "required cols not in error: {}", err);
+        assert!(err.contains("121"), "required rows not in error: {}", err);
+    }
 }
