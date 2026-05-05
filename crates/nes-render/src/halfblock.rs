@@ -12,7 +12,6 @@ type Cell = ((u8, u8, u8), (u8, u8, u8)); // (fg=top, bg=bottom)
 /// Each terminal cell encodes 2 vertical NES pixels: fg = top, bg = bottom.
 pub struct HalfblockRenderer<W: Write> {
     out: W,
-    #[allow(dead_code)] // used in Task 4 terminal lifecycle
     manage_terminal: bool,
     /// Previous frame's cells, indexed by (row_pair * WIDTH + x).
     /// `None` until first draw — first draw paints everything.
@@ -30,8 +29,29 @@ impl<W: Write> HalfblockRenderer<W> {
     }
 }
 
+impl HalfblockRenderer<io::Stdout> {
+    /// Constructor for production use: owns stdout, toggles terminal state
+    /// on `enter`/`leave` (raw mode, alt screen, cursor hide/show).
+    pub fn for_stdout() -> Self {
+        Self {
+            out: io::stdout(),
+            manage_terminal: true,
+            prev: None,
+        }
+    }
+}
+
 impl<W: Write> crate::Renderer for HalfblockRenderer<W> {
     fn enter(&mut self) -> io::Result<()> {
+        if self.manage_terminal {
+            crossterm::terminal::enable_raw_mode()?;
+            crossterm::execute!(
+                self.out,
+                crossterm::terminal::EnterAlternateScreen,
+                crossterm::cursor::Hide,
+            )
+            .map_err(io::Error::other)?;
+        }
         Ok(())
     }
 
@@ -95,7 +115,25 @@ impl<W: Write> crate::Renderer for HalfblockRenderer<W> {
     }
 
     fn leave(&mut self) -> io::Result<()> {
+        if self.manage_terminal {
+            // Best-effort: try to restore everything even if some steps fail.
+            let _ = crossterm::execute!(
+                self.out,
+                crossterm::cursor::Show,
+                crossterm::terminal::LeaveAlternateScreen,
+            );
+            let _ = crossterm::terminal::disable_raw_mode();
+            // Mark it done so a subsequent leave (e.g. via Drop) doesn't double-toggle.
+            self.manage_terminal = false;
+        }
         Ok(())
+    }
+}
+
+impl<W: Write> Drop for HalfblockRenderer<W> {
+    fn drop(&mut self) {
+        // Best-effort terminal restoration on panic / unwind.
+        let _ = <Self as crate::Renderer>::leave(self);
     }
 }
 
@@ -110,7 +148,8 @@ mod tests {
         let mut r = HalfblockRenderer::with_writer(&mut buf);
         let frame = Frame::default();
         r.draw(&frame).unwrap();
-        // 256 cols × 120 row-pairs = 30,720 cells, each containing one ▀ (3 UTF-8 bytes).
+        drop(r); // release mutable borrow so we can read buf
+                 // 256 cols × 120 row-pairs = 30,720 cells, each containing one ▀ (3 UTF-8 bytes).
         let halfblocks = buf.windows(3).filter(|w| *w == "▀".as_bytes()).count();
         assert_eq!(halfblocks, WIDTH * HEIGHT / 2);
     }
@@ -126,6 +165,7 @@ mod tests {
         frame.pixels[1] = 0;
         frame.pixels[2] = 0;
         r.draw(&frame).unwrap();
+        drop(r); // release mutable borrow so we can read buf
         let s = String::from_utf8_lossy(&buf);
         assert!(
             s.contains("38;2;255;0;0"),
@@ -142,6 +182,7 @@ mod tests {
         // Row 1 (second pixel row) = bottom half of the first terminal row.
         frame.set_pixel(0, 1, [0, 0, 255]);
         r.draw(&frame).unwrap();
+        drop(r); // release mutable borrow so we can read buf
         let s = String::from_utf8_lossy(&buf);
         assert!(
             s.contains("48;2;0;0;255"),
@@ -185,5 +226,15 @@ mod tests {
         // The number of ▀ chars should be 1 (only the changed cell).
         let halfblocks = r.out.windows(3).filter(|w| *w == "▀".as_bytes()).count();
         assert_eq!(halfblocks, 1);
+    }
+
+    #[test]
+    fn enter_leave_are_noop_for_writer_sink() {
+        // Sanity: the test constructor must NOT actually toggle terminal state.
+        let mut r = HalfblockRenderer::with_writer(Vec::<u8>::new());
+        r.enter().unwrap();
+        r.leave().unwrap();
+        // Buffer should still be empty (no escapes for terminal toggling).
+        assert!(r.out.is_empty());
     }
 }
