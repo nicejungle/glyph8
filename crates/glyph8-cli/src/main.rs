@@ -1,4 +1,5 @@
 mod cli;
+mod fps;
 mod headless;
 
 use anyhow::Result;
