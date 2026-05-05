@@ -127,4 +127,28 @@ mod tests {
         let info = parse_header(&rom).unwrap();
         assert_eq!(info.mapper, 0x4A);
     }
+
+    #[test]
+    fn rejects_too_short_for_header() {
+        let rom = b"NES\x1A".to_vec(); // 4 bytes, less than HEADER_SIZE
+        let err = parse_header(&rom).unwrap_err();
+        assert!(matches!(err, EmulatorError::RomTooSmall(4)));
+    }
+
+    #[test]
+    fn rejects_bad_magic() {
+        let mut rom = make_minimal_nrom();
+        rom[0] = b'X';
+        let err = parse_header(&rom).unwrap_err();
+        assert!(matches!(err, EmulatorError::InvalidINesHeader));
+    }
+
+    #[test]
+    fn rejects_truncated_prg() {
+        let mut rom = make_minimal_nrom();
+        // claim 2 PRG banks (32 KB) but only ship 1
+        rom[4] = 2;
+        let err = parse_header(&rom).unwrap_err();
+        assert!(matches!(err, EmulatorError::RomTooSmall(_)));
+    }
 }
