@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/nes-core",
     "crates/nes-tetanes-backend",
+    "crates/nes-render",
 ]
 
 [workspace.package]

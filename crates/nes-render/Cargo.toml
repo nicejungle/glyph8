@@ -1,0 +1,13 @@
+[package]
+name = "nes-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+nes-core = { path = "../nes-core" }
+crossterm = "0.28"
+
+[lints]
+workspace = true
