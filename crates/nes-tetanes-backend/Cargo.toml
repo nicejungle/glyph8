@@ -1,0 +1,12 @@
+[package]
+name = "nes-tetanes-backend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nes-core = { path = "../nes-core" }
+tetanes-core = "0.12.2"
+
+[lints]
+workspace = true
