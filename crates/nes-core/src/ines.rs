@@ -73,9 +73,9 @@ pub(crate) fn make_minimal_nrom() -> Vec<u8> {
     rom.push(1); // 1 × 8 KB CHR
     rom.push(0); // flags 6: mapper 0, horizontal mirror, no battery
     rom.push(0); // flags 7
-    rom.extend(std::iter::repeat(0u8).take(8)); // padding
-    rom.extend(std::iter::repeat(0u8).take(16 * 1024));
-    rom.extend(std::iter::repeat(0u8).take(8 * 1024));
+    rom.extend(std::iter::repeat_n(0u8, 8)); // padding
+    rom.extend(std::iter::repeat_n(0u8, 16 * 1024));
+    rom.extend(std::iter::repeat_n(0u8, 8 * 1024));
     rom
 }
 
