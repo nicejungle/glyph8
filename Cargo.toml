@@ -4,6 +4,7 @@ members = [
     "crates/nes-core",
     "crates/nes-tetanes-backend",
     "crates/nes-render",
+    "crates/glyph8-cli",
 ]
 
 [workspace.package]
