@@ -1,6 +1,17 @@
 # glyph8
 
-CLI NES emulator — runs in your terminal as ANSI 24-bit color halfblocks.
+[![CI](https://github.com/nicejungle/glyph8/actions/workflows/ci.yml/badge.svg)](https://github.com/nicejungle/glyph8/actions/workflows/ci.yml)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+[![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org)
+
+> CLI NES emulator that renders to your terminal in 24-bit color halfblocks.
+
+**Website:** [nicejungle.github.io/glyph8](https://nicejungle.github.io/glyph8/)
+
+![demo](docs/assets/demo.gif)
+
+> **Status:** Stage 1.B beta — playable picture, basic input, no audio yet.
+> See the [Roadmap](#roadmap) and [Beta limitations](#beta-limitations) below.
 
 ## Install
 
@@ -45,7 +56,50 @@ glyph8 --headless --frames=60 your.nes     # CI / determinism check
   ratatui-based status bar with pause modal.
 - **Commercial ROMs not bundled.** Bring your own legally-acquired ROM.
 
+## Roadmap
+
+| Stage | Focus | State |
+|---|---|---|
+| 1.A | CPU/PPU core via `tetanes-core` backend, halfblock encoder | done |
+| 1.B | Adaptive halfblock renderer, interactive runloop, status line | **current** |
+| 1.C | Kitty keyboard protocol — real key-release, RightShift Select | next |
+| 1.D | Audio (cpal output) | planned |
+| 1.E | Per-pixel braille + ASCII renderer modes | planned |
+| 1.F | ratatui status bar + pause modal | planned |
+
 ## Development
 
-See `docs/qa-checklist.md` for the per-stage acceptance checks and
-`docs/superpowers/` for design docs and implementation plans.
+```sh
+cargo build --workspace
+cargo test --workspace
+cargo fmt --all
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+See [`docs/qa-checklist.md`](docs/qa-checklist.md) for the per-stage
+acceptance checks and [`docs/superpowers/`](docs/superpowers/) for design
+docs and implementation plans. New contributors: read
+[`CONTRIBUTING.md`](CONTRIBUTING.md) first.
+
+## License
+
+Dual-licensed under either of
+
+- **Apache License, Version 2.0** ([`LICENSE-APACHE`](LICENSE-APACHE) or
+  <https://www.apache.org/licenses/LICENSE-2.0>)
+- **MIT license** ([`LICENSE-MIT`](LICENSE-MIT) or
+  <https://opensource.org/licenses/MIT>)
+
+at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in the work by you, as defined in the Apache-2.0
+license, shall be dual licensed as above, without any additional terms or
+conditions.
+
+### Bundled ROMs
+
+- `tests/roms/nestest.nes` — public domain CPU validation ROM by kevtris.
+- `tests/roms/boing.nes` — © Brad Smith, distributed under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Attribution
+  preserved per the original release.

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>glyph8 — NES emulator that runs in your terminal</title>
+  <meta name="description" content="glyph8 is a CLI NES emulator written in Rust that renders to your terminal in 24-bit color halfblocks." />
+  <meta name="theme-color" content="#0b0d0c" />
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="glyph8 — NES emulator in your terminal" />
+  <meta property="og:description" content="A Rust NES emulator that renders to your terminal in 24-bit color halfblocks. MIT OR Apache-2.0." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nicejungle.github.io/glyph8/" />
+  <meta property="og:image" content="https://nicejungle.github.io/glyph8/assets/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="hero" role="banner">
+    <div class="prompt"><span class="prompt-user">you</span><span class="prompt-at">@</span><span class="prompt-host">term</span><span class="prompt-colon">:</span><span class="prompt-path">~</span><span class="prompt-dollar">$</span> <span class="caret">_</span></div>
+    <h1 class="title">glyph8</h1>
+    <p class="tagline">CLI NES emulator that renders to your terminal in 24-bit color halfblocks.</p>
+
+    <div class="cta">
+      <pre class="install" aria-label="Install command"><code>cargo install --path crates/glyph8-cli</code></pre>
+      <a class="button" href="https://github.com/nicejungle/glyph8">View on GitHub →</a>
+    </div>
+
+    <p class="badges" aria-hidden="true">
+      <span class="badge">stage 1.B beta</span>
+      <span class="badge">MIT OR Apache-2.0</span>
+      <span class="badge">written in rust</span>
+    </p>
+  </header>
+
+  <main id="main">
+
+    <section aria-labelledby="demo-h">
+      <h2 id="demo-h">Demo</h2>
+      <figure class="demo">
+        <img src="assets/demo.gif" alt="A terminal window playing an NES ROM, showing a colorful picture rendered with halfblock characters." onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'demo-placeholder',textContent:'[ demo recording goes here ]'}));" />
+        <figcaption>Adaptive halfblock renderer scaling to fit any terminal at least 64×33 cells. Native resolution is 256×120 cells.</figcaption>
+      </figure>
+    </section>
+
+    <section aria-labelledby="features-h">
+      <h2 id="features-h">Features</h2>
+      <ul class="grid">
+        <li><strong>24-bit halfblock renderer</strong><br />Two NES pixels per terminal cell, full color, diff redraw.</li>
+        <li><strong>Adaptive sizing</strong><br />Scales to fit any terminal ≥ 64×33 while preserving NES aspect.</li>
+        <li><strong>Headless determinism</strong><br /><code>--headless --frames=N</code> for CI / regression checks.</li>
+        <li><strong>Mednafen-style keymap</strong><br />Z/X for B/A, arrows for D-pad, Enter for Start.</li>
+        <li><strong>Pure Rust workspace</strong><br />Four small crates, <code>tetanes-core</code> backend, no <code>unsafe</code>.</li>
+        <li><strong>Permissive license</strong><br />MIT OR Apache-2.0, your pick.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="install-h">
+      <h2 id="install-h">Install &amp; Run</h2>
+      <pre><code>cargo install --path crates/glyph8-cli
+# Or run from the workspace without installing:
+cargo run -p glyph8-cli -- path/to/your.nes</code></pre>
+
+      <h3>Quick start</h3>
+      <pre><code>glyph8 tests/roms/nestest.nes              # bundled CPU validation ROM
+glyph8 tests/roms/boing.nes                # bundled CC BY 4.0 demo (Brad Smith)
+glyph8 path/to/your.nes                    # any standard iNES file
+glyph8 --headless --frames=60 your.nes     # CI / determinism check</code></pre>
+    </section>
+
+    <section aria-labelledby="controls-h">
+      <h2 id="controls-h">Controls</h2>
+      <table class="controls">
+        <thead><tr><th>Key</th><th>NES</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>D-pad</td></tr>
+          <tr><td><kbd>Z</kbd></td><td>B</td></tr>
+          <tr><td><kbd>X</kbd></td><td>A</td></tr>
+          <tr><td><kbd>Enter</kbd></td><td>Start</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Select <span class="muted">(beta — RightShift in 1.C)</span></td></tr>
+          <tr><td><kbd>R</kbd></td><td>Reset</td></tr>
+          <tr><td><kbd>Esc</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Quit</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="roadmap-h">
+      <h2 id="roadmap-h">Roadmap</h2>
+      <ol class="roadmap">
+        <li><span class="stage done">1.A</span> CPU/PPU core via <code>tetanes-core</code>, halfblock encoder.</li>
+        <li><span class="stage current">1.B</span> Adaptive halfblock renderer, interactive runloop, status line. <em>(current)</em></li>
+        <li><span class="stage">1.C</span> Kitty keyboard protocol — real key-release, RightShift Select.</li>
+        <li><span class="stage">1.D</span> Audio output via <code>cpal</code>.</li>
+        <li><span class="stage">1.E</span> Per-pixel braille + ASCII renderer modes.</li>
+        <li><span class="stage">1.F</span> ratatui status bar + pause modal.</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="status-h">
+      <h2 id="status-h">Status &amp; limitations</h2>
+      <ul>
+        <li>No audio yet (1.D).</li>
+        <li>No key-release events without the Kitty keyboard protocol — held keys read as repeated taps. Stage 1.C fixes this.</li>
+        <li>Halfblock-only renderer; per-pixel braille / ASCII modes come in 1.E.</li>
+        <li>Plain-text status line; ratatui status bar arrives in 1.F.</li>
+        <li>Commercial ROMs not bundled. Bring your own legally-acquired ROM.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="license-h">
+      <h2 id="license-h">License &amp; credits</h2>
+      <p>Dual-licensed under <strong>MIT</strong> or <strong>Apache-2.0</strong>, at your option. See
+        <a href="https://github.com/nicejungle/glyph8/blob/main/LICENSE-MIT">LICENSE-MIT</a> and
+        <a href="https://github.com/nicejungle/glyph8/blob/main/LICENSE-APACHE">LICENSE-APACHE</a>.</p>
+      <p>Bundled ROMs:</p>
+      <ul>
+        <li><code>nestest.nes</code> — public domain CPU validation ROM by kevtris.</li>
+        <li><code>boing.nes</code> — © Brad Smith, distributed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer role="contentinfo">
+    <p>
+      <a href="https://github.com/nicejungle/glyph8">github.com/nicejungle/glyph8</a>
+      · MIT OR Apache-2.0
+      · © 2026 nicejungle
+    </p>
+  </footer>
+</body>
+</html>

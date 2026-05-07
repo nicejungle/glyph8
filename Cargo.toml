@@ -11,7 +11,12 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/<owner>/glyph8"
+repository = "https://github.com/nicejungle/glyph8"
+homepage = "https://nicejungle.github.io/glyph8/"
+authors = ["nicejungle"]
+description = "CLI NES emulator that renders to your terminal in 24-bit color halfblocks"
+keywords = ["nes", "emulator", "cli", "terminal", "tui"]
+categories = ["emulators", "command-line-utilities"]
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
