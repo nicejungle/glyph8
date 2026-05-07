@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#0b0d0c"/>
-  <text x="50%" y="58%" text-anchor="middle"
-        font-family="JetBrains Mono, Menlo, monospace"
-        font-size="16" font-weight="700"
-        fill="#7fff9c">g8</text>
+  <!-- A halfblock cell: two stacked pixels — the renderer's signature glyph -->
+  <rect x="9"  y="6"  width="14" height="10" fill="#7fff9c"/>
+  <rect x="9"  y="16" width="14" height="10" fill="#ffb454"/>
 </svg>
